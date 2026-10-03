@@ -25,7 +25,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-ブラウザーで http://127.0.0.1:5173 または http://localhost:5173 を開くと、バックエンドの応答状態を確認できます。バックエンドの既定 URL は `http://127.0.0.1:3000` です。変更する場合は `frontend/.env.local` の `VITE_API_BASE_URL` を設定してください。
+ブラウザーで http://localhost:5173 を開くと、バックエンドの応答状態を確認できます。フロント開発サーバーはローカルの `localhost` で待ち受けます。バックエンドのヘルス確認 API は http://127.0.0.1:3000/health です。バックエンドの既定 URL を変更する場合は `frontend/.env.local` の `VITE_API_BASE_URL` を設定してください。
 
 ## 検証
 
