@@ -131,16 +131,12 @@ describe('AWS問題の取り込みと表示', () => {
     }));
 
     const cards = screen.getAllByRole('article');
-    const firstMark = within(cards[0]).getByRole<HTMLInputElement>('checkbox', { name: /復習マーク/ });
-    const secondMark = within(cards[1]).getByRole<HTMLInputElement>('checkbox', { name: /復習マーク/ });
-    fireEvent.click(firstMark);
-    expect(firstMark.checked).toBe(true);
-    expect(within(cards[0]).getByText('マーク済み')).toBeTruthy();
-    fireEvent.click(secondMark);
-    expect(secondMark.checked).toBe(true);
-    fireEvent.click(secondMark);
-    expect(secondMark.checked).toBe(false);
-    expect(within(cards[1]).queryByText('マーク済み')).toBeNull();
+    fireEvent.click(within(cards[0]).getByRole('button', { name: '復習マークを付ける' }));
+    expect(within(cards[0]).getByRole('button', { name: '復習マークを外す' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(within(cards[1]).getByRole('button', { name: '復習マークを付ける' }));
+    expect(within(cards[1]).getByRole('button', { name: '復習マークを外す' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(within(cards[1]).getByRole('button', { name: '復習マークを外す' }));
+    expect(within(cards[1]).getByRole('button', { name: '復習マークを付ける' }).getAttribute('aria-pressed')).toBe('false');
     fireEvent.change(within(cards[0]).getByRole('textbox', { name: 'メモ' }), { target: { value: '1問目の確認メモ' } });
     fireEvent.change(within(cards[1]).getByRole('textbox', { name: 'メモ' }), { target: { value: '2問目の復習メモ' } });
 
@@ -151,8 +147,8 @@ describe('AWS問題の取り込みと表示', () => {
     expect(restoredCards).toHaveLength(2);
     expect(within(restoredCards[0]).getByText('1問目')).toBeTruthy();
     expect(within(restoredCards[1]).getByText('2問目')).toBeTruthy();
-    expect(within(restoredCards[0]).getByRole<HTMLInputElement>('checkbox', { name: /復習マーク/ }).checked).toBe(true);
-    expect(within(restoredCards[1]).getByRole<HTMLInputElement>('checkbox', { name: /復習マーク/ }).checked).toBe(false);
+    expect(within(restoredCards[0]).getByRole('button', { name: '復習マークを外す' }).getAttribute('aria-pressed')).toBe('true');
+    expect(within(restoredCards[1]).getByRole('button', { name: '復習マークを付ける' }).getAttribute('aria-pressed')).toBe('false');
     expect((within(restoredCards[0]).getByRole('textbox', { name: 'メモ' }) as HTMLTextAreaElement).value)
       .toBe('1問目の確認メモ');
     expect((within(restoredCards[1]).getByRole('textbox', { name: 'メモ' }) as HTMLTextAreaElement).value)

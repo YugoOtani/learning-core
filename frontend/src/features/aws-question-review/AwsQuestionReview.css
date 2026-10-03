@@ -133,6 +133,57 @@
   font-size: 13px;
 }
 
+.aws-question-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.aws-question-card-heading h2 {
+  margin: 0;
+}
+
+.aws-bookmark-button {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 7px;
+  border: 1px solid #d8e0dc;
+  border-radius: 8px;
+  background: #fff;
+  color: #63736d;
+  cursor: pointer;
+}
+
+.aws-bookmark-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.aws-bookmark-button:hover,
+.aws-bookmark-button--marked {
+  border-color: #74b89a;
+  background: #eaf6ef;
+  color: #245c3c;
+}
+
+.aws-bookmark-button--marked svg {
+  fill: currentColor;
+}
+
+.aws-bookmark-button:focus-visible {
+  outline: 2px solid #337d67;
+  outline-offset: 2px;
+}
+
 .aws-answer-fieldset {
   min-width: 0;
   margin: 0;
@@ -242,22 +293,6 @@
   margin-top: 22px;
   padding-top: 16px;
   border-top: 1px solid #e7ece9;
-}
-
-.aws-review-mark {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
-  color: #45535d;
-  font-size: 13px;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.aws-review-mark-status {
-  color: #245c4c;
-  font-size: 12px;
 }
 
 .aws-note-label {

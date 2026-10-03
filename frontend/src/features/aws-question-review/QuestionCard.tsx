@@ -23,7 +23,20 @@ export function QuestionCard({
 
   return (
     <article className="aws-panel aws-question-card">
-      <h2>問題文</h2>
+      <div className="aws-question-card-heading">
+        <h2>問題文</h2>
+        <button
+          className={`aws-bookmark-button${review.marked ? ' aws-bookmark-button--marked' : ''}`}
+          type="button"
+          aria-label={review.marked ? '復習マークを外す' : '復習マークを付ける'}
+          aria-pressed={review.marked}
+          onClick={() => onReviewChange({ ...review, marked: !review.marked })}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6.25 3.75h11.5A1.25 1.25 0 0 1 19 5v15.25l-7-3.75-7 3.75V5a1.25 1.25 0 0 1 1.25-1.25Z" />
+          </svg>
+        </button>
+      </div>
       <p className="aws-question-text">{question.question}</p>
       <fieldset className="aws-answer-fieldset" disabled={isSubmitted}>
         <legend>選択肢</legend>
@@ -67,16 +80,7 @@ export function QuestionCard({
           正解: {question.correctAnswers.join('、')}
         </p>
       )}
-      <section className="aws-question-review-details" aria-label="復習情報">
-        <label className="aws-review-mark">
-          <input
-            type="checkbox"
-            checked={review.marked}
-            onChange={(event) => onReviewChange({ ...review, marked: event.target.checked })}
-          />
-          <span>復習マーク</span>
-          {review.marked && <span className="aws-review-mark-status">マーク済み</span>}
-        </label>
+      <div className="aws-question-review-details">
         <label className="aws-note-label" htmlFor={noteId}>メモ</label>
         <textarea
           id={noteId}
@@ -84,7 +88,7 @@ export function QuestionCard({
           value={review.note}
           onChange={(event) => onReviewChange({ ...review, note: event.target.value })}
         />
-      </section>
+      </div>
     </article>
   );
 }
