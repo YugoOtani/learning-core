@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import type { AwsQuestion, AwsQuestionAnswerState, AwsQuestionReview } from './AwsQuestion';
+import { formatQuestionForClipboard } from './formatQuestionForClipboard';
 
 type QuestionCardProps = {
   readonly question: AwsQuestion;
@@ -25,17 +26,26 @@ export function QuestionCard({
     <article className="aws-panel aws-question-card">
       <div className="aws-question-card-heading">
         <h2>問題文</h2>
-        <button
-          className={`aws-bookmark-button${review.marked ? ' aws-bookmark-button--marked' : ''}`}
-          type="button"
-          aria-label={review.marked ? '復習マークを外す' : '復習マークを付ける'}
-          aria-pressed={review.marked}
-          onClick={() => onReviewChange({ ...review, marked: !review.marked })}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6.25 3.75h11.5A1.25 1.25 0 0 1 19 5v15.25l-7-3.75-7 3.75V5a1.25 1.25 0 0 1 1.25-1.25Z" />
-          </svg>
-        </button>
+        <div className="aws-question-card-actions">
+          <button
+            className="aws-copy-question-button"
+            type="button"
+            onClick={() => navigator.clipboard.writeText(formatQuestionForClipboard(question))}
+          >
+            問題をコピー
+          </button>
+          <button
+            className={`aws-bookmark-button${review.marked ? ' aws-bookmark-button--marked' : ''}`}
+            type="button"
+            aria-label={review.marked ? '復習マークを外す' : '復習マークを付ける'}
+            aria-pressed={review.marked}
+            onClick={() => onReviewChange({ ...review, marked: !review.marked })}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6.25 3.75h11.5A1.25 1.25 0 0 1 19 5v15.25l-7-3.75-7 3.75V5a1.25 1.25 0 0 1 1.25-1.25Z" />
+            </svg>
+          </button>
+        </div>
       </div>
       <p className="aws-question-text">{question.question}</p>
       <fieldset className="aws-answer-fieldset" disabled={isSubmitted}>

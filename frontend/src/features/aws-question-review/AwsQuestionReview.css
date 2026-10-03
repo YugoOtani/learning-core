@@ -144,6 +144,28 @@
   margin: 0;
 }
 
+.aws-question-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aws-copy-question-button {
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #cbd5d0;
+  border-radius: 7px;
+  background: #fff;
+  color: #245c4c;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.aws-copy-question-button:hover {
+  background: #eaf6ef;
+}
+
 .aws-bookmark-button {
   display: grid;
   flex: 0 0 auto;

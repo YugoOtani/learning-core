@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router';
 import sampleJson from '../../../../sample/problem.json?raw';
 import { App } from '../../App';
@@ -23,6 +23,34 @@ function openReviewWithSampleQuestion() {
 }
 
 describe('AWS問題の取り込みと表示', () => {
+  it('複数の問題から選んだ問題だけを整形テキストでコピーする', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    openPage('/aws-question-review/import');
+    submitQuestion(JSON.stringify({
+      question: '1問目',
+      choices: [{ label: 'A', text: '1問目の選択肢' }],
+      correctAnswers: ['A'],
+    }));
+    fireEvent.click(screen.getByRole('link', { name: '問題を取り込む' }));
+    submitQuestion(JSON.stringify({
+      question: '2問目',
+      choices: [{ label: 'B', text: '2問目の選択肢' }, { label: 'C', text: '別の選択肢' }],
+      correctAnswers: ['C'],
+    }));
+
+    const cards = screen.getAllByRole('article');
+    fireEvent.click(within(cards[1]).getByRole('button', { name: '問題をコピー' }));
+
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith(
+      '問題文:\n2問目\n\n選択肢:\nB. 2問目の選択肢\nC. 別の選択肢\n\n正解:\nC',
+    ));
+    expect(writeText).toHaveBeenCalledTimes(1);
+  });
+
   it('未取り込みの復習画面から、空の編集可能なJSON入力欄を開ける', () => {
     openPage('/aws-question-review');
 
