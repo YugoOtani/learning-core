@@ -6,3 +6,8 @@ export type AwsQuestion = {
   }[];
   readonly correctAnswers: readonly string[];
 };
+
+export type AwsQuestionAnswerState = {
+  readonly selectedAnswers: readonly string[];
+  readonly isSubmitted: boolean;
+};

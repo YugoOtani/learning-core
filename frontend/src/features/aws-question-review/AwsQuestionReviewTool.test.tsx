@@ -51,11 +51,68 @@ describe('AWS問題の取り込みと表示', () => {
     expect(screen.queryByRole('textbox')).toBeNull();
     const card = screen.getByRole('article');
     expect(within(card).getByRole('heading', { name: '問題文' })).toBeTruthy();
-    expect(within(card).getByRole('heading', { name: '選択肢' })).toBeTruthy();
+    expect(within(card).getByRole('group', { name: '選択肢' })).toBeTruthy();
     expect(within(card).getByText((_, element) => element?.tagName === 'P').textContent).toBe(question.question);
     expect(within(card).getAllByRole('listitem').map((item) => item.textContent))
       .toEqual(question.choices.map((choice) => `${choice.label}${choice.text}`));
     expect(screen.queryByText(/正解/)).toBeNull();
+    expect(within(card).getByRole('button', { name: '回答する' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('複数の選択肢を回答すると、選んだ回答を保ったまま正解ラベルを表示する', () => {
+    openReviewWithSampleQuestion();
+    const card = screen.getByRole('article');
+    const checkboxes = within(card).getAllByRole<HTMLInputElement>('checkbox');
+
+    fireEvent.click(checkboxes[0]);
+    fireEvent.click(checkboxes[1]);
+    fireEvent.click(within(card).getByRole('button', { name: '回答する' }));
+
+    const choices = within(card).getAllByRole('listitem');
+    expect(checkboxes[0].checked).toBe(true);
+    expect(checkboxes[1].checked).toBe(true);
+    expect(within(card).getByRole('group', { name: '選択肢' }).hasAttribute('disabled')).toBe(true);
+    expect(choices[0].classList.contains('aws-choice--incorrect-selected')).toBe(true);
+    expect(choices[1].classList.contains('aws-choice--correct')).toBe(true);
+    expect(choices[3].classList.contains('aws-choice--correct')).toBe(true);
+    expect(within(card).getByRole('status').textContent).toBe('正解: B、D');
+    expect(within(card).getByRole('button', { name: '回答する' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('11問以上は10問ずつ表示し、ページを戻ると回答状態も維持する', () => {
+    openPage('/aws-question-review/import');
+    for (let index = 1; index <= 11; index += 1) {
+      if (index > 1) {
+        fireEvent.click(screen.getByRole('link', { name: '問題を取り込む' }));
+      }
+      submitQuestion(JSON.stringify({
+        question: `問題 ${index}`,
+        choices: [{ label: 'A', text: `選択肢 ${index}` }],
+        correctAnswers: ['A'],
+      }));
+    }
+
+    expect(screen.getAllByRole('article')).toHaveLength(10);
+    expect(screen.getByText('問題 1')).toBeTruthy();
+    expect(screen.getByText('問題 10')).toBeTruthy();
+    expect(screen.queryByText('問題 11')).toBeNull();
+    expect(screen.getByText('1 / 2 ページ')).toBeTruthy();
+
+    const firstQuestion = screen.getAllByRole('article')[0];
+    const firstCheckbox = within(firstQuestion).getByRole('checkbox');
+    fireEvent.click(firstCheckbox);
+    fireEvent.click(within(firstQuestion).getByRole('button', { name: '回答する' }));
+    fireEvent.click(screen.getByRole('button', { name: '次へ' }));
+
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(screen.getByText('問題 11')).toBeTruthy();
+    expect(screen.getByText('2 / 2 ページ')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: '前へ' }));
+
+    const returnedFirstQuestion = screen.getAllByRole('article')[0];
+    expect(within(returnedFirstQuestion).getByRole('status').textContent).toBe('正解: A');
+    expect(within(returnedFirstQuestion).getByRole<HTMLInputElement>('checkbox').checked).toBe(true);
   });
 
   it('正解ラベルだけが違っても、表示するDOMと読み上げ用属性は同じになる', () => {
