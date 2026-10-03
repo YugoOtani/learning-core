@@ -1,0 +1,200 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  color: #1d2935;
+  background: #fbfcfa;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.page-shell {
+  width: min(100% - 64px, 1120px);
+  margin: 0 auto;
+}
+
+.site-header {
+  height: 76px;
+  border-bottom: 1px solid #e7ece9;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.topbar {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+}
+
+.brand-mark {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 10px;
+  background: #337d67;
+  color: #fff;
+  font-size: 16px;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  color: #71808b;
+  font-size: 13px;
+}
+
+.navigation-current {
+  color: #245c4c;
+  font-weight: 700;
+}
+
+.avatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e9f3ed;
+  color: #245c4c;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.main-content {
+  padding-top: 58px;
+  padding-bottom: 72px;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1.25;
+  letter-spacing: -0.055em;
+}
+
+.tools-section {
+  margin-top: 42px;
+}
+
+.tools-heading {
+  margin-bottom: 17px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: -0.025em;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.tool-card {
+  display: flex;
+  min-height: 168px;
+  flex-direction: column;
+  padding: 20px 21px;
+  border: 1px solid #e7ece9;
+  border-radius: 15px;
+  background: #fff;
+}
+
+.tool-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tool-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 13px;
+  font-size: 20px;
+}
+
+.tool-icon.mint {
+  background: #e9f3ed;
+}
+
+.tool-icon.peach {
+  background: #f7eee4;
+}
+
+.tool-icon.lavender {
+  background: #eeedf7;
+}
+
+.tool-icon.blue {
+  background: #eaf1f7;
+}
+
+.tool-card h3 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.tool-card p {
+  margin: 12px 0 0;
+  color: #71808b;
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .page-shell {
+    width: calc(100% - 36px);
+  }
+
+  .navigation {
+    gap: 14px;
+  }
+
+  .navigation-optional {
+    display: none;
+  }
+
+  .main-content {
+    padding-top: 39px;
+  }
+
+  .tools-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-card {
+    min-height: 0;
+  }
+}

@@ -1,28 +1,45 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen, within } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { MemoryRouter } from 'react-router';
 import { App } from './App';
 
-afterEach(() => {
-  cleanup();
-  vi.unstubAllGlobals();
-});
+afterEach(cleanup);
 
-describe('App', () => {
-  it('displays the backend health response', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ status: 'ok' }),
-      }),
+describe('学習ホーム', () => {
+  it('個別の学習体験をタイトルと説明付きで表示する', () => {
+    render(
+      <MemoryRouter initialEntries={['/home']}>
+        <App />
+      </MemoryRouter>,
     );
 
-    render(<App />);
+    expect(screen.getByRole('heading', { level: 1, name: '今日の学び' })).toBeTruthy();
+    expect(screen.getByRole('navigation', { name: 'メインナビゲーション' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2, name: 'ツール一覧' })).toBeTruthy();
 
-    await waitFor(() => {
-      expect(screen.getByRole('status').textContent).toBe('バックエンド応答: ok');
-    });
+    const cards = screen.getAllByRole('article');
+    expect(cards.length).toBeGreaterThan(1);
 
-    expect(fetch).toHaveBeenCalledWith('http://127.0.0.1:3000/health');
+    for (const card of cards) {
+      expect(within(card).getByRole('heading', { level: 3 }).textContent).toBeTruthy();
+      expect(within(card).getByText((_, element) => element?.tagName === 'P')).toBeTruthy();
+    }
+
+    expect(within(cards[0]).getByRole('heading', { level: 3, name: 'AtCoderの問題に挑戦' })).toBeTruthy();
+    expect(within(cards[0]).getByText('今日の一問。実際にコードを書いて、解き方を考えてみましょう。')).toBeTruthy();
+    expect(within(cards[1]).getByRole('heading', { level: 3, name: 'AIに関する最新ニュース' })).toBeTruthy();
+    expect(within(cards[1]).getByText('今週の注目ニュースを読み、技術の動きをつかみましょう。')).toBeTruthy();
+  });
+
+  it('ホーム以外のパスでは学習ホームを表示しない', () => {
+    render(
+      <MemoryRouter initialEntries={['/settings']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('heading', { level: 1, name: '今日の学び' })).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: 'ページが見つかりません' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'ホームに戻る' }).getAttribute('href')).toBe('/home');
   });
 });
