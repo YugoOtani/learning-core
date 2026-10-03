@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import type { AwsQuestion, AwsQuestionAnswerState } from './AwsQuestion';
+import type { AwsQuestion, AwsQuestionAnswerState, AwsQuestionReview, AwsQuestionReviewData } from './AwsQuestion';
 import { QuestionCard } from './QuestionCard';
 
 const QUESTIONS_PER_PAGE = 10;
@@ -8,9 +8,11 @@ const EMPTY_ANSWER_STATE: AwsQuestionAnswerState = { selectedAnswers: [], isSubm
 
 type AwsQuestionReviewPageProps = {
   readonly questions: readonly AwsQuestion[];
+  readonly reviewsByQuestion: AwsQuestionReviewData['reviewsByQuestion'];
+  readonly onReviewChange: (question: AwsQuestion, review: AwsQuestionReview) => void;
 };
 
-export function AwsQuestionReviewPage({ questions }: AwsQuestionReviewPageProps) {
+export function AwsQuestionReviewPage({ questions, reviewsByQuestion, onReviewChange }: AwsQuestionReviewPageProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [answerStates, setAnswerStates] = useState<Readonly<Record<string, AwsQuestionAnswerState>>>({});
   const pageCount = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
@@ -43,6 +45,8 @@ export function AwsQuestionReviewPage({ questions }: AwsQuestionReviewPageProps)
               answerState={answerStates[question.question] ?? EMPTY_ANSWER_STATE}
               onSelectedAnswersChange={(selectedAnswers) => updateAnswerState(question, { selectedAnswers })}
               onSubmit={() => updateAnswerState(question, { isSubmitted: true })}
+              review={reviewsByQuestion[question.question] ?? { marked: false, note: '' }}
+              onReviewChange={(review) => onReviewChange(question, review)}
             />
           ))}
         </div>

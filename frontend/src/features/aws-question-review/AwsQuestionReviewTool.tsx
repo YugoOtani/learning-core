@@ -1,22 +1,35 @@
 import { useState } from 'react';
 import { Link, Route, Routes } from 'react-router';
 import { NotFound } from '../../NotFound';
-import type { AwsQuestion } from './AwsQuestion';
+import type { AwsQuestion, AwsQuestionReview, AwsQuestionReviewData } from './AwsQuestion';
 import { importQuestion, type QuestionImportResult } from './importQuestion';
 import { AwsQuestionImportPage } from './AwsQuestionImportPage';
 import { AwsQuestionReviewPage } from './AwsQuestionReviewPage';
+import { loadAwsQuestionReview, saveAwsQuestionReview } from './awsQuestionReviewStorage';
 import './AwsQuestionReview.css';
 
 export function AwsQuestionReviewTool() {
-  const [questions, setQuestions] = useState<readonly AwsQuestion[]>([]);
+  const [reviewData, setReviewData] = useState(loadAwsQuestionReview);
+
+  function updateReviewData(nextData: AwsQuestionReviewData) {
+    saveAwsQuestionReview(nextData);
+    setReviewData(nextData);
+  }
 
   function handleImport(input: string): QuestionImportResult {
-    // 正常に取り込めた場合だけ一覧を更新し、結果を入力画面へ返す
-    const result = importQuestion(input, questions);
+    // 正常に取り込めた場合だけ保存済みの問題一覧を更新する
+    const result = importQuestion(input, reviewData.questions);
     if (result.status === 'imported') {
-      setQuestions(result.questions);
+      updateReviewData({ ...reviewData, questions: result.questions });
     }
     return result;
+  }
+
+  function handleReviewChange(question: AwsQuestion, review: AwsQuestionReview) {
+    updateReviewData({
+      ...reviewData,
+      reviewsByQuestion: { ...reviewData.reviewsByQuestion, [question.question]: review },
+    });
   }
 
   return (
@@ -31,7 +44,16 @@ export function AwsQuestionReviewTool() {
         </div>
       </header>
       <Routes>
-        <Route index element={<AwsQuestionReviewPage questions={questions} />} />
+        <Route
+          index
+          element={(
+            <AwsQuestionReviewPage
+              questions={reviewData.questions}
+              reviewsByQuestion={reviewData.reviewsByQuestion}
+              onReviewChange={handleReviewChange}
+            />
+          )}
+        />
         <Route path="import" element={<AwsQuestionImportPage onImport={handleImport} />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

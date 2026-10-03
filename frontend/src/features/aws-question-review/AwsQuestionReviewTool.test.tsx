@@ -1,10 +1,11 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MemoryRouter } from 'react-router';
 import sampleJson from '../../../../sample/problem.json?raw';
 import { App } from '../../App';
 import type { AwsQuestion } from './AwsQuestion';
 
+beforeEach(() => window.localStorage.clear());
 afterEach(cleanup);
 
 function openPage(path: string) {
@@ -48,7 +49,7 @@ describe('AWS問題の取り込みと表示', () => {
     submitQuestion(sampleJson);
 
     expect(screen.getByRole('heading', { level: 1, name: 'AWS問題の復習' })).toBeTruthy();
-    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.queryByRole('textbox', { name: '問題データ（JSON）' })).toBeNull();
     const card = screen.getByRole('article');
     expect(within(card).getByRole('heading', { name: '問題文' })).toBeTruthy();
     expect(within(card).getByRole('group', { name: '選択肢' })).toBeTruthy();
@@ -99,7 +100,7 @@ describe('AWS問題の取り込みと表示', () => {
     expect(screen.getByText('1 / 2 ページ')).toBeTruthy();
 
     const firstQuestion = screen.getAllByRole('article')[0];
-    const firstCheckbox = within(firstQuestion).getByRole('checkbox');
+    const firstCheckbox = within(firstQuestion).getAllByRole('checkbox')[0];
     fireEvent.click(firstCheckbox);
     fireEvent.click(within(firstQuestion).getByRole('button', { name: '回答する' }));
     fireEvent.click(screen.getByRole('button', { name: '次へ' }));
@@ -112,7 +113,50 @@ describe('AWS問題の取り込みと表示', () => {
 
     const returnedFirstQuestion = screen.getAllByRole('article')[0];
     expect(within(returnedFirstQuestion).getByRole('status').textContent).toBe('正解: A');
-    expect(within(returnedFirstQuestion).getByRole<HTMLInputElement>('checkbox').checked).toBe(true);
+    expect(within(returnedFirstQuestion).getAllByRole<HTMLInputElement>('checkbox')[0].checked).toBe(true);
+  });
+
+  it('問題ごとの復習マークとメモを保存し、画面の再初期化後もそれぞれ復元する', () => {
+    openPage('/aws-question-review/import');
+    submitQuestion(JSON.stringify({
+      question: '1問目',
+      choices: [{ label: 'A', text: '選択肢A' }],
+      correctAnswers: ['A'],
+    }));
+    fireEvent.click(screen.getByRole('link', { name: '問題を取り込む' }));
+    submitQuestion(JSON.stringify({
+      question: '2問目',
+      choices: [{ label: 'B', text: '選択肢B' }],
+      correctAnswers: ['B'],
+    }));
+
+    const cards = screen.getAllByRole('article');
+    const firstMark = within(cards[0]).getByRole<HTMLInputElement>('checkbox', { name: /復習マーク/ });
+    const secondMark = within(cards[1]).getByRole<HTMLInputElement>('checkbox', { name: /復習マーク/ });
+    fireEvent.click(firstMark);
+    expect(firstMark.checked).toBe(true);
+    expect(within(cards[0]).getByText('マーク済み')).toBeTruthy();
+    fireEvent.click(secondMark);
+    expect(secondMark.checked).toBe(true);
+    fireEvent.click(secondMark);
+    expect(secondMark.checked).toBe(false);
+    expect(within(cards[1]).queryByText('マーク済み')).toBeNull();
+    fireEvent.change(within(cards[0]).getByRole('textbox', { name: 'メモ' }), { target: { value: '1問目の確認メモ' } });
+    fireEvent.change(within(cards[1]).getByRole('textbox', { name: 'メモ' }), { target: { value: '2問目の復習メモ' } });
+
+    cleanup();
+    openPage('/aws-question-review');
+
+    const restoredCards = screen.getAllByRole('article');
+    expect(restoredCards).toHaveLength(2);
+    expect(within(restoredCards[0]).getByText('1問目')).toBeTruthy();
+    expect(within(restoredCards[1]).getByText('2問目')).toBeTruthy();
+    expect(within(restoredCards[0]).getByRole<HTMLInputElement>('checkbox', { name: /復習マーク/ }).checked).toBe(true);
+    expect(within(restoredCards[1]).getByRole<HTMLInputElement>('checkbox', { name: /復習マーク/ }).checked).toBe(false);
+    expect((within(restoredCards[0]).getByRole('textbox', { name: 'メモ' }) as HTMLTextAreaElement).value)
+      .toBe('1問目の確認メモ');
+    expect((within(restoredCards[1]).getByRole('textbox', { name: 'メモ' }) as HTMLTextAreaElement).value)
+      .toBe('2問目の復習メモ');
   });
 
   it('正解ラベルだけが違っても、表示するDOMと読み上げ用属性は同じになる', () => {
@@ -133,7 +177,9 @@ describe('AWS問題の取り込みと表示', () => {
     fireEvent.change(secondPage.getByRole('textbox'), { target: { value: secondInput } });
     fireEvent.click(secondPage.getByRole('button', { name: '問題を取り込む' }));
 
-    expect(firstPage.getByRole('main').outerHTML).toBe(secondPage.getByRole('main').outerHTML);
+    expect(firstPage.getByRole('main').textContent).toBe(secondPage.getByRole('main').textContent);
+    expect(firstPage.getAllByRole<HTMLInputElement>('checkbox').map((checkbox) => checkbox.checked))
+      .toEqual(secondPage.getAllByRole<HTMLInputElement>('checkbox').map((checkbox) => checkbox.checked));
     expect(firstPage.queryByText(/正解/)).toBeNull();
   });
 

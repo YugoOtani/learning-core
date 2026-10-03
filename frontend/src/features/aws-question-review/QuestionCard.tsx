@@ -1,14 +1,25 @@
-import type { AwsQuestion, AwsQuestionAnswerState } from './AwsQuestion';
+import { useId } from 'react';
+import type { AwsQuestion, AwsQuestionAnswerState, AwsQuestionReview } from './AwsQuestion';
 
 type QuestionCardProps = {
   readonly question: AwsQuestion;
   readonly answerState: AwsQuestionAnswerState;
   readonly onSelectedAnswersChange: (answers: readonly string[]) => void;
   readonly onSubmit: () => void;
+  readonly review: AwsQuestionReview;
+  readonly onReviewChange: (review: AwsQuestionReview) => void;
 };
 
-export function QuestionCard({ question, answerState, onSelectedAnswersChange, onSubmit }: QuestionCardProps) {
+export function QuestionCard({
+  question,
+  answerState,
+  onSelectedAnswersChange,
+  onSubmit,
+  review,
+  onReviewChange,
+}: QuestionCardProps) {
   const { selectedAnswers, isSubmitted } = answerState;
+  const noteId = useId();
 
   return (
     <article className="aws-panel aws-question-card">
@@ -56,6 +67,24 @@ export function QuestionCard({ question, answerState, onSelectedAnswersChange, o
           正解: {question.correctAnswers.join('、')}
         </p>
       )}
+      <section className="aws-question-review-details" aria-label="復習情報">
+        <label className="aws-review-mark">
+          <input
+            type="checkbox"
+            checked={review.marked}
+            onChange={(event) => onReviewChange({ ...review, marked: event.target.checked })}
+          />
+          <span>復習マーク</span>
+          {review.marked && <span className="aws-review-mark-status">マーク済み</span>}
+        </label>
+        <label className="aws-note-label" htmlFor={noteId}>メモ</label>
+        <textarea
+          id={noteId}
+          className="aws-note-input"
+          value={review.note}
+          onChange={(event) => onReviewChange({ ...review, note: event.target.value })}
+        />
+      </section>
     </article>
   );
 }
