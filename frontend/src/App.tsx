@@ -1,5 +1,7 @@
 import './App.css';
 import { Link, Navigate, NavLink, Route, Routes } from 'react-router';
+import { NotFound } from './NotFound';
+import { AwsQuestionReviewTool } from './features/aws-question-review/AwsQuestionReviewTool';
 
 type LearningTool = {
   title: string;
@@ -71,20 +73,19 @@ function LearningHome() {
                 <p>{tool.description}</p>
               </article>
             ))}
+            <article>
+              <Link className="tool-card" to="/aws-question-review">
+                <div className="tool-card-heading">
+                  <span className="tool-icon mint" aria-hidden="true">☁</span>
+                  <h3>AWS問題の復習</h3>
+                </div>
+                <p>取り込んだAWSの問題文と選択肢を確認します。</p>
+              </Link>
+            </article>
           </div>
         </section>
       </main>
     </>
-  );
-}
-
-function NotFound() {
-  return (
-    <main className="page-shell main-content">
-      <h1>ページが見つかりません</h1>
-      <p>指定されたページはありません。</p>
-      <Link to="/home">ホームに戻る</Link>
-    </main>
   );
 }
 
@@ -93,6 +94,7 @@ export function App() {
     <Routes>
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<LearningHome />} />
+      <Route path="/aws-question-review/*" element={<AwsQuestionReviewTool />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { MemoryRouter, useLocation } from 'react-router';
 import { App } from './App';
@@ -57,5 +57,20 @@ describe('学習ホーム', () => {
     expect(screen.queryByRole('heading', { level: 1, name: '今日の学び' })).toBeNull();
     expect(screen.getByRole('heading', { level: 1, name: 'ページが見つかりません' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'ホームに戻る' }).getAttribute('href')).toBe('/home');
+  });
+
+  it('ツール一覧からAWS問題の復習画面を開ける', () => {
+    render(
+      <MemoryRouter initialEntries={['/home']}>
+        <App />
+        <CurrentPath />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('link', { name: /AWS問題の復習/ }));
+
+    expect(screen.getByRole('heading', { level: 1, name: 'AWS問題の復習' })).toBeTruthy();
+    expect(screen.getByTestId('current-path').textContent).toBe('/aws-question-review');
+    expect(screen.getByRole('link', { name: '問題を取り込む' })).toBeTruthy();
   });
 });

@@ -1,0 +1,159 @@
+.aws-import-page {
+  max-width: 760px;
+}
+
+.aws-review-page {
+  max-width: 1040px;
+}
+
+.aws-page-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.aws-text-link {
+  color: #245c4c;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.aws-intro, .aws-empty {
+  margin: 12px 0 0;
+  color: #71808b;
+  font-size: 14px;
+}
+
+.aws-panel {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid #e7ece9;
+  border-radius: 14px;
+  background: #fff;
+  overflow-wrap: anywhere;
+}
+
+.aws-import-form {
+  margin-top: 25px;
+}
+
+.aws-input-label {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.aws-hint {
+  margin: 5px 0 0;
+  color: #71808b;
+  font-size: 12px;
+}
+
+.aws-import-form textarea {
+  display: block;
+  width: 100%;
+  min-height: 260px;
+  margin-top: 17px;
+  padding: 14px;
+  resize: vertical;
+  border: 1px solid #d8e0dc;
+  border-radius: 9px;
+  background: #fcfdfc;
+  color: #43515b;
+  font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.aws-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.aws-import-button {
+  min-height: 40px;
+  padding: 7px 15px;
+  border: 1px solid #337d67;
+  border-radius: 8px;
+  background: #337d67;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.aws-import-button:hover {
+  background: #245c4c;
+}
+
+.aws-import-notice {
+  color: #a64242;
+  font-size: 14px;
+}
+
+.aws-question-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 25px;
+}
+
+.aws-question-card h2 {
+  color: #71808b;
+  font-size: 13px;
+}
+
+.aws-question-text {
+  margin: 8px 0 22px;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.aws-choices {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aws-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #e7ece9;
+  border-radius: 8px;
+  color: #45535d;
+  font-size: 13px;
+}
+
+.aws-choice-label {
+  flex: 0 0 auto;
+  min-width: 24px;
+  padding: 0 4px;
+  border: 1px solid #cbd5d0;
+  border-radius: 5px;
+  text-align: center;
+  font-weight: 750;
+}
+
+.aws-choice-text {
+  min-width: 0;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 600px) {
+  .aws-panel {
+    padding: 16px;
+  }
+
+  .aws-import-form textarea {
+    min-height: 220px;
+  }
+}
