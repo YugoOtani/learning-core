@@ -17,9 +17,7 @@ description: 実装前に対象コードを確認し、変更の目的と必要�
 
 # 入力
 
-対象タスクの以下を確認する。
-
-- `.ai/features/<feature-name>/tasks/<task-name>/task.md`
+- `.ai/features/<feature-name>/tasks/<task-name>/task.md`(指定された場合のみ)
 - `AGENTS.md`
 - 関連する機能仕様
 - `docs/coding-guidelines.md`
@@ -211,7 +209,7 @@ Plan作成後、
 
 `.ai/templates/plan-implementation.md` のフォーマットに従う。
 
-出力先は必ず以下とする。
+出力先は必ず以下とする。存在しない場合は適切に作成する。
 
 `.ai/features/<feature-name>/tasks/<task-name>/plan-implementation.md`
 
