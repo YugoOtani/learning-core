@@ -17,6 +17,7 @@
 | 場面 | 参照先 |
 | --- | --- |
 | 実装・設計・リファクタリング | [coding.md](coding.md) |
+| UIの構成・文言 | [ui.md](ui.md) |
 | コメントの追加・修正、コードの説明 | [comments.md](comments.md) |
 | テストの設計・追加・修正、検証のレビュー | [testing.md](testing.md) |
 | 作業の分割、実装方針の説明、変更の報告 | [workflow.md](workflow.md) |
