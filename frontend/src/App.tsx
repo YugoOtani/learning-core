@@ -1,5 +1,5 @@
 import './App.css';
-import { Link, NavLink, Route, Routes } from 'react-router';
+import { Link, Navigate, NavLink, Route, Routes } from 'react-router';
 
 type LearningTool = {
   title: string;
@@ -91,6 +91,7 @@ function NotFound() {
 export function App() {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/home" element={<LearningHome />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

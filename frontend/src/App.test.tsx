@@ -1,11 +1,27 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, useLocation } from 'react-router';
 import { App } from './App';
 
 afterEach(cleanup);
 
+function CurrentPath() {
+  return <output data-testid="current-path">{useLocation().pathname}</output>;
+}
+
 describe('学習ホーム', () => {
+  it('ルートにアクセスするとホームへリダイレクトする', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+        <CurrentPath />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: '今日の学び' })).toBeTruthy();
+    expect(screen.getByTestId('current-path').textContent).toBe('/home');
+  });
+
   it('個別の学習体験をタイトルと説明付きで表示する', () => {
     render(
       <MemoryRouter initialEntries={['/home']}>
