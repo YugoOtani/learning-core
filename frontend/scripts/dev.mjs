@@ -11,19 +11,29 @@ let backendChild;
 let backendExit;
 let stopping = false;
 
-async function isBackendAvailable() {
+async function getBackendStatus() {
   try {
-    const response = await fetch('http://127.0.0.1:3000/health', {
+    const health = await fetch('http://127.0.0.1:3000/health', {
       signal: AbortSignal.timeout(500),
     });
-    return response.ok;
+    if (!health.ok) return 'unavailable';
+    if (health.headers.get('x-question-store') !== 'file-v1') return 'incompatible';
+    const questions = await fetch('http://127.0.0.1:3000/aws-question-review/questions', {
+      signal: AbortSignal.timeout(500),
+    });
+    return questions.ok ? 'ready' : 'incompatible';
   } catch {
-    return false;
+    return 'unavailable';
   }
 }
 
 async function waitForBackend() {
-  while (!(await isBackendAvailable())) {
+  while (true) {
+    const status = await getBackendStatus();
+    if (status === 'ready') return;
+    if (status === 'incompatible') {
+      throw new Error('ポート3000で旧バックエンドが動いています。旧プロセスを停止してから再実行してください。');
+    }
     if (backendExit?.finished) {
       throw new Error('Rustバックエンドが起動できませんでした。');
     }
@@ -42,7 +52,11 @@ process.on('SIGINT', () => stopAll(0));
 process.on('SIGTERM', () => stopAll(0));
 
 try {
-  if (!(await isBackendAvailable())) {
+  const backendStatus = await getBackendStatus();
+  if (backendStatus === 'incompatible') {
+    throw new Error('ポート3000で旧バックエンドが動いています。旧プロセスを停止してから再実行してください。');
+  }
+  if (backendStatus !== 'ready') {
     backendChild = spawn('cargo', ['run', '--manifest-path', resolve(repositoryDirectory, 'backend/Cargo.toml')], {
       cwd: repositoryDirectory,
       stdio: 'inherit',

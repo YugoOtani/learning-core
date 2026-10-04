@@ -1,6 +1,7 @@
 **/target/
 **/node_modules/
 **/dist/
+backend/data/
 **/.env.local
 **/.env.*.local
 .ai/features/**

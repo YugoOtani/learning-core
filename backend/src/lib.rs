@@ -1,10 +1,11 @@
 use axum::{
     Json, Router,
     extract::State,
-    http::{HeaderValue, Method},
+    http::{HeaderMap, HeaderValue, Method},
     routing::get,
 };
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tower_http::cors::{AllowOrigin, CorsLayer};
@@ -14,8 +15,10 @@ struct HealthResponse {
     status: &'static str,
 }
 
-async fn health() -> Json<HealthResponse> {
-    Json(HealthResponse { status: "ok" })
+async fn health() -> (HeaderMap, Json<HealthResponse>) {
+    let mut headers = HeaderMap::new();
+    headers.insert("x-question-store", HeaderValue::from_static("file-v1"));
+    (headers, Json(HealthResponse { status: "ok" }))
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -35,6 +38,7 @@ pub struct AwsQuestionChoice {
 #[derive(Clone, Default)]
 struct AppState {
     questions: Arc<RwLock<Vec<AwsQuestion>>>,
+    persistence_path: Option<PathBuf>,
 }
 
 async fn get_questions(State(state): State<AppState>) -> Json<Vec<AwsQuestion>> {
@@ -44,21 +48,53 @@ async fn get_questions(State(state): State<AppState>) -> Json<Vec<AwsQuestion>> 
 async fn save_questions(
     State(state): State<AppState>,
     Json(incoming): Json<Vec<AwsQuestion>>,
-) -> Json<Vec<AwsQuestion>> {
+) -> Result<Json<Vec<AwsQuestion>>, axum::http::StatusCode> {
     let mut questions = state.questions.write().await;
+    let mut updated_questions = questions.clone();
     for question in incoming {
-        if !questions
+        if !updated_questions
             .iter()
             .any(|saved| saved.question == question.question)
         {
-            questions.push(question);
+            updated_questions.push(question);
         }
     }
-    Json(questions.clone())
+
+    if let Some(path) = &state.persistence_path {
+        persist_questions(path, &updated_questions)
+            .await
+            .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)?;
+    }
+
+    *questions = updated_questions.clone();
+    Ok(Json(updated_questions))
+}
+
+async fn persist_questions(path: &PathBuf, questions: &[AwsQuestion]) -> std::io::Result<()> {
+    let parent = path
+        .parent()
+        .expect("question data path must have a parent directory");
+    tokio::fs::create_dir_all(parent).await?;
+    let temporary_path = path.with_extension("json.tmp");
+    let json = serde_json::to_vec(questions).map_err(std::io::Error::other)?;
+    tokio::fs::write(&temporary_path, json).await?;
+    tokio::fs::rename(temporary_path, path).await
 }
 
 pub fn app() -> Router {
-    app_with_state(AppState::default())
+    let persistence_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("data")
+        .join("aws-question-review.json");
+    let questions = match std::fs::read(&persistence_path) {
+        Ok(data) => serde_json::from_slice(&data)
+            .expect("saved AWS question data is invalid JSON; file was left unchanged"),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Vec::new(),
+        Err(error) => panic!("failed to read saved AWS question data: {error}"),
+    };
+    app_with_state(AppState {
+        questions: Arc::new(RwLock::new(questions)),
+        persistence_path: Some(persistence_path),
+    })
 }
 
 fn app_with_state(state: AppState) -> Router {
