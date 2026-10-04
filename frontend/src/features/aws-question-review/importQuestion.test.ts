@@ -17,7 +17,7 @@ describe('問題JSONの取り込み', () => {
 
     const result = importQuestion(sampleJson, []);
 
-    expect(result).toEqual({ status: 'imported', questions: [expectedQuestion] });
+    expect(result).toEqual({ status: 'imported', question: expectedQuestion, questions: [expectedQuestion] });
   });
 
   it('既存問題を変更せず、新しい問題を末尾に追加する', () => {
@@ -31,7 +31,7 @@ describe('問題JSONの取り込み', () => {
 
     const result = importQuestion(JSON.stringify(newQuestion), existingQuestions);
 
-    expect(result).toEqual({ status: 'imported', questions: [original, newQuestion] });
+    expect(result).toEqual({ status: 'imported', question: newQuestion, questions: [original, newQuestion] });
     expect(existingQuestions).toEqual([original]);
   });
 
@@ -44,7 +44,7 @@ describe('問題JSONの取り込み', () => {
 
     const result = importQuestion(JSON.stringify(question), []);
 
-    expect(result).toEqual({ status: 'imported', questions: [question] });
+    expect(result).toEqual({ status: 'imported', question, questions: [question] });
   });
 
   it('選択肢や正解が違っても問題文が完全一致すれば重複として追加しない', () => {
@@ -68,7 +68,7 @@ describe('問題JSONの取り込み', () => {
 
     const result = importQuestion(JSON.stringify(changedQuestion), [original]);
 
-    expect(result).toEqual({ status: 'imported', questions: [original, changedQuestion] });
+    expect(result).toEqual({ status: 'imported', question: changedQuestion, questions: [original, changedQuestion] });
   });
 
   it.each(['', '   ', '{"question":', '{"question": "問題",}'])('JSON構文が不正なら理由を返す（%j）', (input) => {

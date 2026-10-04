@@ -16,7 +16,7 @@ export function AwsQuestionImportPage({ onImport }: AwsQuestionImportPageProps) 
     // 取り込み結果に応じて復習画面へ進むか、入力欄に案内を表示する
     const result = onImport(input);
     if (result.status === 'imported') {
-      navigate('/aws-question-review');
+      navigate('/aws-question-review/note', { state: { question: result.question.question } });
       return;
     }
     setNotice({

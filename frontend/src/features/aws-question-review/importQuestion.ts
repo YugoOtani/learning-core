@@ -1,7 +1,7 @@
 import type { AwsQuestion } from './AwsQuestion';
 
 export type QuestionImportResult =
-  | { readonly status: 'imported'; readonly questions: readonly AwsQuestion[] }
+  | { readonly status: 'imported'; readonly question: AwsQuestion; readonly questions: readonly AwsQuestion[] }
   | { readonly status: 'duplicate' }
   | { readonly status: 'invalid'; readonly message: string };
 
@@ -83,5 +83,9 @@ export function importQuestion(
   }
 
   // 既存問題を保ったまま、新しい問題を一覧の末尾へ追加する
-  return { status: 'imported', questions: [...existingQuestions, validation.question] };
+  return {
+    status: 'imported',
+    question: validation.question,
+    questions: [...existingQuestions, validation.question],
+  };
 }

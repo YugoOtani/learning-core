@@ -74,7 +74,7 @@ function LearningHome() {
               </article>
             ))}
             <article>
-              <Link className="tool-card" to="/aws-question-review">
+              <Link className="tool-card" to="/aws-question-review/start">
                 <div className="tool-card-heading">
                   <span className="tool-icon mint" aria-hidden="true">☁</span>
                   <h3>AWS問題の復習</h3>

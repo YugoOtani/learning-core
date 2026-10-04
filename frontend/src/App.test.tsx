@@ -69,8 +69,9 @@ describe('学習ホーム', () => {
 
     fireEvent.click(screen.getByRole('link', { name: /AWS問題の復習/ }));
 
-    expect(screen.getByRole('heading', { level: 1, name: 'AWS問題の復習' })).toBeTruthy();
-    expect(screen.getByTestId('current-path').textContent).toBe('/aws-question-review');
+    expect(screen.getByRole('heading', { level: 1, name: '出題開始' })).toBeTruthy();
+    expect(screen.getByTestId('current-path').textContent).toBe('/aws-question-review/start');
+    expect(screen.getByRole('button', { name: /すべての問題から出題/ })).toBeTruthy();
     expect(screen.getByRole('link', { name: '問題を取り込む' })).toBeTruthy();
   });
 });

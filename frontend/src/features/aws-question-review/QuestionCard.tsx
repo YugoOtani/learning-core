@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import type { AwsQuestion, AwsQuestionAnswerState, AwsQuestionReview } from './AwsQuestion';
 import { formatQuestionForClipboard } from './formatQuestionForClipboard';
+import { useAutoResizeTextArea } from './useAutoResizeTextArea';
 
 type QuestionCardProps = {
   readonly question: AwsQuestion;
@@ -21,6 +22,7 @@ export function QuestionCard({
 }: QuestionCardProps) {
   const { selectedAnswers, isSubmitted } = answerState;
   const noteId = useId();
+  const noteRef = useAutoResizeTextArea(review.note, isSubmitted);
 
   return (
     <article className="aws-panel aws-question-card">
@@ -90,15 +92,18 @@ export function QuestionCard({
           正解: {question.correctAnswers.join('、')}
         </p>
       )}
-      <div className="aws-question-review-details">
-        <label className="aws-note-label" htmlFor={noteId}>メモ</label>
-        <textarea
-          id={noteId}
-          className="aws-note-input"
-          value={review.note}
-          onChange={(event) => onReviewChange({ ...review, note: event.target.value })}
-        />
-      </div>
+      {isSubmitted && (
+        <div className="aws-question-review-details">
+          <label className="aws-note-label" htmlFor={noteId}>メモ</label>
+          <textarea
+            id={noteId}
+            ref={noteRef}
+            className="aws-note-input"
+            value={review.note}
+            onChange={(event) => onReviewChange({ ...review, note: event.target.value })}
+          />
+        </div>
+      )}
     </article>
   );
 }

@@ -6,6 +6,14 @@
   max-width: 1040px;
 }
 
+.aws-session-start-page {
+  max-width: 760px;
+}
+
+.aws-note-entry-page {
+  max-width: 760px;
+}
+
 .aws-page-heading {
   display: flex;
   flex-wrap: wrap;
@@ -38,6 +46,35 @@
 
 .aws-import-form {
   margin-top: 25px;
+}
+
+.aws-note-entry-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.aws-note-entry-form h2 {
+  margin: 0;
+  color: #71808b;
+  font-size: 13px;
+}
+
+.aws-note-entry-form .aws-question-text {
+  margin: 0 0 8px;
+}
+
+.aws-note-entry-form .aws-choices {
+  margin-top: 0;
+}
+
+.aws-note-entry-form .aws-note-input {
+  min-height: 120px;
+}
+
+.aws-note-entry-form .aws-import-button {
+  justify-self: start;
+  margin-top: 8px;
 }
 
 .aws-input-label {
@@ -93,6 +130,63 @@
 .aws-import-notice {
   color: #a64242;
   font-size: 14px;
+}
+
+.aws-session-options {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.aws-session-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  padding: 12px 15px;
+  border: 1px solid #cbd5d0;
+  border-radius: 8px;
+  background: #fff;
+  color: #245c4c;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.aws-session-option:hover:not(:disabled) {
+  border-color: #74b89a;
+  background: #eaf6ef;
+}
+
+.aws-session-option:disabled {
+  color: #89958f;
+  cursor: default;
+}
+
+.aws-session-option-count {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.aws-review-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.aws-restart-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #245c4c;
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
 .aws-question-list {
@@ -328,7 +422,8 @@
   width: 100%;
   min-height: 72px;
   padding: 9px 11px;
-  resize: vertical;
+  overflow-y: hidden;
+  resize: none;
   border: 1px solid #d8e0dc;
   border-radius: 8px;
   color: #43515b;

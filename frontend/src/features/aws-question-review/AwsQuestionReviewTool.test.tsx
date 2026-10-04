@@ -12,9 +12,17 @@ function openPage(path: string) {
   return render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>);
 }
 
-function submitQuestion(input: string) {
+function submitQuestionWithoutSavingNote(input: string) {
   fireEvent.change(screen.getByRole('textbox', { name: '問題データ（JSON）' }), { target: { value: input } });
   fireEvent.click(screen.getByRole('button', { name: '問題を取り込む' }));
+}
+
+function submitQuestion(input: string) {
+  submitQuestionWithoutSavingNote(input);
+  if (screen.queryByRole('button', { name: 'メモを保存して出題開始' })) {
+    fireEvent.click(screen.getByRole('button', { name: 'メモを保存して出題開始' }));
+    fireEvent.click(screen.getByRole('button', { name: /すべての問題から出題/ }));
+  }
 }
 
 function openReviewWithSampleQuestion() {
@@ -23,6 +31,52 @@ function openReviewWithSampleQuestion() {
 }
 
 describe('AWS問題の取り込みと表示', () => {
+  it('復習問題だけで解答を始め、やり直しで開始画面から全問題を選べる', () => {
+    openPage('/aws-question-review/import');
+    submitQuestion(JSON.stringify({
+      question: '復習対象',
+      choices: [{ label: 'A', text: '選択肢A' }],
+      correctAnswers: ['A'],
+    }));
+    fireEvent.click(screen.getByRole('link', { name: '問題を取り込む' }));
+    submitQuestion(JSON.stringify({
+      question: '通常問題',
+      choices: [{ label: 'B', text: '選択肢B' }],
+      correctAnswers: ['B'],
+    }));
+    fireEvent.click(within(screen.getAllByRole('article')[0]).getByRole('button', { name: '復習マークを付ける' }));
+    fireEvent.click(screen.getByRole('link', { name: 'ホーム' }));
+    fireEvent.click(screen.getByRole('link', { name: /AWS問題の復習/ }));
+
+    fireEvent.click(screen.getByRole('button', { name: /復習問題から出題/ }));
+
+    expect(screen.getByText('復習対象')).toBeTruthy();
+    expect(screen.queryByText('通常問題')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'やり直し' }));
+
+    expect(screen.getByRole('heading', { level: 1, name: '出題開始' })).toBeTruthy();
+    expect(screen.queryByText('復習対象')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /すべての問題から出題/ }));
+
+    expect(screen.getByText('復習対象')).toBeTruthy();
+    expect(screen.getByText('通常問題')).toBeTruthy();
+  });
+
+  it('復習マーク付きの問題がないときは復習問題から出題できない', () => {
+    openPage('/aws-question-review/import');
+    submitQuestion(JSON.stringify({
+      question: '未マーク問題',
+      choices: [{ label: 'A', text: '選択肢A' }],
+      correctAnswers: ['A'],
+    }));
+    fireEvent.click(screen.getByRole('link', { name: 'ホーム' }));
+    fireEvent.click(screen.getByRole('link', { name: /AWS問題の復習/ }));
+
+    expect(screen.getByText('復習マークが付いた問題はありません。')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /復習問題から出題/ }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: /すべての問題から出題/ }).hasAttribute('disabled')).toBe(false);
+  });
+
   it('複数の問題から選んだ問題だけを整形テキストでコピーする', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {
@@ -49,6 +103,33 @@ describe('AWS問題の取り込みと表示', () => {
       '問題文:\n2問目\n\n選択肢:\nB. 2問目の選択肢\nC. 別の選択肢\n\n正解:\nC',
     ));
     expect(writeText).toHaveBeenCalledTimes(1);
+  });
+
+  it('問題を取り込んだ直後にメモを入力・保存でき、保存後は出題開始画面へ戻る', () => {
+    openPage('/aws-question-review/import');
+    submitQuestionWithoutSavingNote(sampleJson);
+
+    expect(screen.getByRole('heading', { level: 1, name: '取り込んだ問題のメモ' })).toBeTruthy();
+    expect(screen.getByText(/大手グローバル旅行会社/)).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2, name: '選択肢' })).toBeTruthy();
+    expect(screen.getAllByRole('listitem')).toHaveLength(JSON.parse(sampleJson).choices.length);
+    expect(screen.queryByText('正解: B、D')).toBeNull();
+    const note = screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'メモ' });
+    Object.defineProperty(note, 'scrollHeight', { configurable: true, value: 168 });
+    fireEvent.change(note, { target: { value: '確認事項\n帯域の要件を整理する' } });
+    expect(note.style.height).toBe('168px');
+
+    fireEvent.click(screen.getByRole('button', { name: 'メモを保存して出題開始' }));
+
+    expect(screen.getByRole('heading', { level: 1, name: '出題開始' })).toBeTruthy();
+    cleanup();
+    openPage('/aws-question-review');
+    const card = screen.getByRole('article');
+    expect(within(card).queryByRole('textbox', { name: 'メモ' })).toBeNull();
+    fireEvent.click(within(card).getAllByRole('checkbox')[0]);
+    fireEvent.click(within(card).getByRole('button', { name: '回答する' }));
+    expect((within(card).getByRole('textbox', { name: 'メモ' }) as HTMLTextAreaElement).value)
+      .toBe('確認事項\n帯域の要件を整理する');
   });
 
   it('未取り込みの復習画面から、空の編集可能なJSON入力欄を開ける', () => {
@@ -108,6 +189,20 @@ describe('AWS問題の取り込みと表示', () => {
     expect(within(card).getByRole('button', { name: '回答する' }).hasAttribute('disabled')).toBe(true);
   });
 
+  it('回答後にメモを表示し、入力内容に合わせて欄を伸ばす', () => {
+    openReviewWithSampleQuestion();
+    const card = screen.getByRole('article');
+
+    expect(within(card).queryByRole('textbox', { name: 'メモ' })).toBeNull();
+    fireEvent.click(within(card).getAllByRole('checkbox')[0]);
+    fireEvent.click(within(card).getByRole('button', { name: '回答する' }));
+
+    const note = within(card).getByRole<HTMLTextAreaElement>('textbox', { name: 'メモ' });
+    Object.defineProperty(note, 'scrollHeight', { configurable: true, value: 144 });
+    fireEvent.change(note, { target: { value: '一行目\n二行目' } });
+    expect(note.style.height).toBe('144px');
+  });
+
   it('11問以上は10問ずつ表示し、ページを戻ると回答状態も維持する', () => {
     openPage('/aws-question-review/import');
     for (let index = 1; index <= 11; index += 1) {
@@ -165,18 +260,27 @@ describe('AWS問題の取り込みと表示', () => {
     expect(within(cards[1]).getByRole('button', { name: '復習マークを外す' }).getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(within(cards[1]).getByRole('button', { name: '復習マークを外す' }));
     expect(within(cards[1]).getByRole('button', { name: '復習マークを付ける' }).getAttribute('aria-pressed')).toBe('false');
+    for (const card of cards) {
+      fireEvent.click(within(card).getAllByRole('checkbox')[0]);
+      fireEvent.click(within(card).getByRole('button', { name: '回答する' }));
+    }
     fireEvent.change(within(cards[0]).getByRole('textbox', { name: 'メモ' }), { target: { value: '1問目の確認メモ' } });
     fireEvent.change(within(cards[1]).getByRole('textbox', { name: 'メモ' }), { target: { value: '2問目の復習メモ' } });
 
     cleanup();
     openPage('/aws-question-review');
 
+    expect(screen.queryByRole('textbox', { name: 'メモ' })).toBeNull();
     const restoredCards = screen.getAllByRole('article');
     expect(restoredCards).toHaveLength(2);
     expect(within(restoredCards[0]).getByText('1問目')).toBeTruthy();
     expect(within(restoredCards[1]).getByText('2問目')).toBeTruthy();
     expect(within(restoredCards[0]).getByRole('button', { name: '復習マークを外す' }).getAttribute('aria-pressed')).toBe('true');
     expect(within(restoredCards[1]).getByRole('button', { name: '復習マークを付ける' }).getAttribute('aria-pressed')).toBe('false');
+    for (const card of restoredCards) {
+      fireEvent.click(within(card).getAllByRole('checkbox')[0]);
+      fireEvent.click(within(card).getByRole('button', { name: '回答する' }));
+    }
     expect((within(restoredCards[0]).getByRole('textbox', { name: 'メモ' }) as HTMLTextAreaElement).value)
       .toBe('1問目の確認メモ');
     expect((within(restoredCards[1]).getByRole('textbox', { name: 'メモ' }) as HTMLTextAreaElement).value)
@@ -198,8 +302,12 @@ describe('AWS問題の取り込みと表示', () => {
 
     fireEvent.change(firstPage.getByRole('textbox'), { target: { value: firstInput } });
     fireEvent.click(firstPage.getByRole('button', { name: '問題を取り込む' }));
+    fireEvent.click(firstPage.getByRole('button', { name: 'メモを保存して出題開始' }));
+    fireEvent.click(firstPage.getByRole('button', { name: /すべての問題から出題/ }));
     fireEvent.change(secondPage.getByRole('textbox'), { target: { value: secondInput } });
     fireEvent.click(secondPage.getByRole('button', { name: '問題を取り込む' }));
+    fireEvent.click(secondPage.getByRole('button', { name: 'メモを保存して出題開始' }));
+    fireEvent.click(secondPage.getByRole('button', { name: /すべての問題から出題/ }));
 
     expect(firstPage.getByRole('main').textContent).toBe(secondPage.getByRole('main').textContent);
     expect(firstPage.getAllByRole<HTMLInputElement>('checkbox').map((checkbox) => checkbox.checked))

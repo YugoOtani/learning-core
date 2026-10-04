@@ -10,9 +10,10 @@ type AwsQuestionReviewPageProps = {
   readonly questions: readonly AwsQuestion[];
   readonly reviewsByQuestion: AwsQuestionReviewData['reviewsByQuestion'];
   readonly onReviewChange: (question: AwsQuestion, review: AwsQuestionReview) => void;
+  readonly onRestart: () => void;
 };
 
-export function AwsQuestionReviewPage({ questions, reviewsByQuestion, onReviewChange }: AwsQuestionReviewPageProps) {
+export function AwsQuestionReviewPage({ questions, reviewsByQuestion, onReviewChange, onRestart }: AwsQuestionReviewPageProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [answerStates, setAnswerStates] = useState<Readonly<Record<string, AwsQuestionAnswerState>>>({});
   const pageCount = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
@@ -32,7 +33,10 @@ export function AwsQuestionReviewPage({ questions, reviewsByQuestion, onReviewCh
     <main className="page-shell main-content aws-review-page">
       <div className="aws-page-heading">
         <h1>AWS問題の復習</h1>
-        <Link className="aws-text-link" to="/aws-question-review/import">問題を取り込む</Link>
+        <div className="aws-review-page-actions">
+          <button className="aws-restart-button" type="button" onClick={onRestart}>やり直し</button>
+          <Link className="aws-text-link" to="/aws-question-review/import">問題を取り込む</Link>
+        </div>
       </div>
       {questions.length === 0 ? (
         <p className="aws-empty">問題はまだ取り込まれていません。</p>
