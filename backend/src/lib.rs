@@ -1,9 +1,12 @@
 use axum::{
     Json, Router,
+    extract::State,
     http::{HeaderValue, Method},
     routing::get,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use tower_http::cors::{AllowOrigin, CorsLayer};
 
 #[derive(Serialize)]
@@ -15,15 +18,66 @@ async fn health() -> Json<HealthResponse> {
     Json(HealthResponse { status: "ok" })
 }
 
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AwsQuestion {
+    question: String,
+    choices: Vec<AwsQuestionChoice>,
+    correct_answers: Vec<String>,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct AwsQuestionChoice {
+    label: String,
+    text: String,
+}
+
+#[derive(Clone, Default)]
+struct AppState {
+    questions: Arc<RwLock<Vec<AwsQuestion>>>,
+}
+
+async fn get_questions(State(state): State<AppState>) -> Json<Vec<AwsQuestion>> {
+    Json(state.questions.read().await.clone())
+}
+
+async fn save_questions(
+    State(state): State<AppState>,
+    Json(incoming): Json<Vec<AwsQuestion>>,
+) -> Json<Vec<AwsQuestion>> {
+    let mut questions = state.questions.write().await;
+    for question in incoming {
+        if !questions
+            .iter()
+            .any(|saved| saved.question == question.question)
+        {
+            questions.push(question);
+        }
+    }
+    Json(questions.clone())
+}
+
 pub fn app() -> Router {
+    app_with_state(AppState::default())
+}
+
+fn app_with_state(state: AppState) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(AllowOrigin::list([
             HeaderValue::from_static("http://localhost:5173"),
             HeaderValue::from_static("http://127.0.0.1:5173"),
         ]))
-        .allow_methods([Method::GET]);
+        .allow_methods([Method::GET, Method::PUT])
+        .allow_headers([axum::http::header::CONTENT_TYPE]);
 
-    Router::new().route("/health", get(health)).layer(cors)
+    Router::new()
+        .route("/health", get(health))
+        .route(
+            "/aws-question-review/questions",
+            get(get_questions).put(save_questions),
+        )
+        .with_state(state)
+        .layer(cors)
 }
 
 #[cfg(test)]

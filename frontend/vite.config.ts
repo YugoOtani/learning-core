@@ -7,6 +7,12 @@ export default defineConfig(({ mode }) => ({
     host: 'localhost',
     port: 5173,
     strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:3000',
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
     ...(mode === 'test' ? { fs: { allow: ['.', '../sample'] } } : {}),
   },
   test: {

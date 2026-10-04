@@ -5,12 +5,14 @@ export type QuestionSessionMode = 'review' | 'all';
 type AwsQuestionSessionStartPageProps = {
   readonly reviewQuestionCount: number;
   readonly allQuestionCount: number;
+  readonly canImportQuestions: boolean;
   readonly onStart: (mode: QuestionSessionMode) => void;
 };
 
 export function AwsQuestionSessionStartPage({
   reviewQuestionCount,
   allQuestionCount,
+  canImportQuestions,
   onStart,
 }: AwsQuestionSessionStartPageProps) {
   return (
@@ -42,7 +44,7 @@ export function AwsQuestionSessionStartPage({
         {allQuestionCount === 0 && (
           <p className="aws-hint">問題はまだ取り込まれていません。</p>
         )}
-        <Link className="aws-text-link" to="/aws-question-review/import">問題を取り込む</Link>
+        {canImportQuestions && <Link className="aws-text-link" to="/aws-question-review/import">問題を取り込む</Link>}
       </section>
     </main>
   );

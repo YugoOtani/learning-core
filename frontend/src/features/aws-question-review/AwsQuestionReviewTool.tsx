@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router';
 import { NotFound } from '../../NotFound';
 import type { AwsQuestion, AwsQuestionReview, AwsQuestionReviewData } from './AwsQuestion';
@@ -7,7 +7,12 @@ import { AwsQuestionImportPage } from './AwsQuestionImportPage';
 import { AwsQuestionReviewPage } from './AwsQuestionReviewPage';
 import { AwsQuestionNoteEntryPage } from './AwsQuestionNoteEntryPage';
 import { AwsQuestionSessionStartPage, type QuestionSessionMode } from './AwsQuestionSessionStartPage';
-import { loadAwsQuestionReview, saveAwsQuestionReview } from './awsQuestionReviewStorage';
+import {
+  loadAwsQuestionReview,
+  publishAwsQuestions,
+  saveAwsQuestionReview,
+  synchronizeAwsQuestions,
+} from './awsQuestionReviewStorage';
 import './AwsQuestionReview.css';
 
 type AwsQuestionNoteEntryRouteProps = {
@@ -43,13 +48,28 @@ function AwsQuestionNoteEntryRoute({ questions, reviewsByQuestion, onSave }: Aws
 export function AwsQuestionReviewTool() {
   const [reviewData, setReviewData] = useState(loadAwsQuestionReview);
   const navigate = useNavigate();
+  const canImportQuestions = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   const reviewQuestions = reviewData.questions.filter(
     (question) => reviewData.reviewsByQuestion[question.question]?.marked === true,
   );
 
+  useEffect(() => {
+    let active = true;
+    void synchronizeAwsQuestions(reviewData.questions, canImportQuestions).then((questions) => {
+      if (!active || questions.length === reviewData.questions.length) return;
+      const nextData = { ...loadAwsQuestionReview(), questions };
+      saveAwsQuestionReview(nextData);
+      setReviewData(nextData);
+    });
+    return () => { active = false; };
+  }, []);
+
   function updateReviewData(nextData: AwsQuestionReviewData) {
     saveAwsQuestionReview(nextData);
     setReviewData(nextData);
+    if (canImportQuestions && nextData.questions !== reviewData.questions) {
+      void publishAwsQuestions(nextData.questions);
+    }
   }
 
   function handleImport(input: string): QuestionImportResult {
@@ -100,6 +120,7 @@ export function AwsQuestionReviewTool() {
             <AwsQuestionSessionStartPage
               reviewQuestionCount={reviewQuestions.length}
               allQuestionCount={reviewData.questions.length}
+              canImportQuestions={canImportQuestions}
               onStart={startSession}
             />
           )}
@@ -122,6 +143,7 @@ export function AwsQuestionReviewTool() {
               reviewsByQuestion={reviewData.reviewsByQuestion}
               onReviewChange={handleReviewChange}
               onRestart={restartSession}
+              canImportQuestions={canImportQuestions}
             />
           )}
         />
@@ -133,10 +155,11 @@ export function AwsQuestionReviewTool() {
               reviewsByQuestion={reviewData.reviewsByQuestion}
               onReviewChange={handleReviewChange}
               onRestart={restartSession}
+              canImportQuestions={canImportQuestions}
             />
           )}
         />
-        <Route path="import" element={<AwsQuestionImportPage onImport={handleImport} />} />
+        <Route path="import" element={canImportQuestions ? <AwsQuestionImportPage onImport={handleImport} /> : <Navigate to="/aws-question-review/start" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
