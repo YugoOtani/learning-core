@@ -1,17 +1,17 @@
 ---
 name: mini-suggest
-description: 実装したい内容と現在のコードを確認し、データ・制御の流れに沿って、人間が短時間で判断できる非常に小さなmicrotask候補を最大10件提示する。
+description: 実装したい内容と現在のコードを確認し、データ・制御の流れに沿って、人間が短時間で判断できる非常に小さなmicrotask候補を最大10件、変更差分とともに提示する。
 ---
 
 # 目的
 
-実装したい最終状態と現在のコードを確認し、  
-現在地点から次に進めるためのmicrotask候補を最大10件提示する。
+実装したい最終状態と現在のコードを確認し、現在地点から次に進めるためのmicrotask候補を最大10件提示する。
 
 最終状態までの完全な実装計画は作らない。
 
-ユーザーは提示された候補のうち必要なものだけを選んで `mini-impl` で実装する。  
-その後、本スキルを再実行し、変更後のコードから次の候補を改めて生成する。
+ユーザーは提示された候補と変更差分を見て、必要なmicrotaskだけを選び `mini-impl` で実装する。
+
+その後、本スキルを再実行し、変更後のコードを改めて確認して次の候補を生成する。
 
 このスキルでは実装しない。
 
@@ -19,7 +19,7 @@ description: 実装したい内容と現在のコードを確認し、データ�
 
 microtaskは、
 
-**人間が差分を短時間で確認し、その変更だけを承認・修正できる最小の実装意図**
+**人間が変更差分を短時間で確認し、その変更だけを承認・修正できる最小の実装意図**
 
 とする。
 
@@ -86,18 +86,6 @@ microtaskは、コード上の依存関係ではなく、原則として**対象
 `UI → ViewModel → UseCase → Repository → API → Repository → ViewModel → UI`
 
 という流れであれば、その順番にコードを追いながらmicrotaskを作る。
-
-典型的には以下の順序を優先する。
-
-- 入力を受け取る
-- 値を次の処理へ渡す
-- 必要な処理を呼び出す
-- 値を変換する
-- 状態を更新する
-- 結果を返す
-- 呼び出し元で受け取る
-- 出力する
-
 コード構造上の都合だけで、後段の型・クラス・メソッドを先に実装しない。
 
 たとえば、
@@ -115,28 +103,34 @@ microtaskは、コード上の依存関係ではなく、原則として**対象
 
 この結果、一時的にコンパイルエラーが発生してもよい。
 
-# 一時的な未完成状態
+# 変更差分を提示する
 
-各microtask実装後に、プロジェクト全体がコンパイル可能である必要はない。
+ユーザーがmicrotaskを選ぶ前に、**そのmicrotaskを実装するとコードがどのように変わるか判断できる状態**にする。
 
-シナリオ順で実装するために、以下の状態を許容する。
+各microtaskについて、その変更だけを表す必要最小限のdiffを提示する。
 
-- まだ存在しない引数を呼び出し側から渡している
-- まだ存在しないメソッドを呼び出している
-- 戻り値を受け取る側だけ先に変更されている
-- interfaceと実装が一時的に一致していない
-- 型エラーが一時的に発生している
-- プレースホルダだけが存在し、処理が未実装である
+diffには、
 
-これらを避けるためだけに後続のmicrotaskを先取りしない。
+- 変更される行
+- 変更を理解するために必要な最小限の周辺コード
 
-ただし、一時的不整合が生じる場合は、それを解消する後続microtaskが近い位置に存在すること。
+だけを含める。
 
-必要であれば候補の末尾に、
+ファイル全体や、判断に不要な長いコードは表示しない。
 
-`※ 次のmicrotaskまで一時的に型エラー`
+各diffは、そのmicrotaskより前の候補が順番に適用された仮想状態を基準にしてよい。
 
-程度の短い注記を付けてよい。
+たとえば、
+
+1. `submit` に `inputText` 引数を追加する
+2. `repository.search` に `inputText` を渡す
+
+という順序なら、2のdiffでは1が適用済みとして扱う。
+ただし、これは候補を判断するための仮想的な変更イメージである。
+
+ユーザーが一部のmicrotaskだけを選択した場合、`mini-impl` はこの仮想状態を前提にせず、実際の現在コードを読み直して実装する。
+
+後続microtaskの変更を先取りしてdiffへ含めない。
 
 # 手順
 
@@ -171,6 +165,7 @@ microtaskは、コード上の依存関係ではなく、原則として**対象
 - 関連テスト
 - プロジェクトルール
 - すでに実装済みの部分
+- microtaskで実際に編集することになる箇所
 
 過去に提示したmicrotaskではなく、**現在のコードを正とする**。
 
@@ -185,7 +180,6 @@ microtaskは、コード上の依存関係ではなく、原則として**対象
 `ボタン押下 → ViewModel → Repository → API → レスポンス解析 → ViewModel → 表示`
 
 この順序をmicrotaskの並び順の基準とする。
-
 シナリオそのものを詳細な設計書として出力する必要はない。
 
 ## 4. 現在地点を特定する
@@ -204,14 +198,39 @@ microtaskは、コード上の依存関係ではなく、原則として**対象
 
 候補は、
 
-- 現在すぐ変更できるもの
-- その変更に続く近い変更
+- 現在地点に最も近い変更
+- そこからシナリオを先へ進める近い変更
 
 を中心とする。
 
 最終状態までの全microtaskを列挙する必要はない。
 
 10件より少ない方が自然なら、無理に10件作らない。
+
+## 6. 各microtaskの差分を作る
+
+生成したmicrotaskごとに、実際の現在コードを確認し、そのmicrotaskを適用した場合の最小差分を作る。
+
+推測だけでdiffを作らない。
+
+各diffは、原則としてそれ以前の候補が順番に適用された仮想状態を基準にする。
+
+ただし、各diffに含める変更は、そのmicrotask自身の変更だけにする。
+
+## 7. 番号ごとに提示する
+
+各microtaskを独立した判断単位として、
+
+- 番号
+- 変更内容
+- ファイル名
+- diff
+
+の順で提示する。
+
+ファイル名は補助情報として目立たせない。
+
+ユーザーが各番号のdiffを見て、そのまま実装する番号を選べる状態にする。
 
 # 避けること
 
@@ -228,13 +247,16 @@ microtaskは、コード上の依存関係ではなく、原則として**対象
 - テスト追加だけを独立したmicrotaskとして大量に並べる
 - 「実装する」「対応する」だけで具体的変更が分からない候補を出す
 - 同じ変更を異なる言い方で重複して提示する
+- 判断に不要な大量のコードをdiffに含める
+- ファイル全体のdiffを表示する
+- 現在のコードを確認せず、想像だけでdiffを作る
+- 1つのdiffに複数microtask分の変更を含める
+- コンパイルを通すためだけの変更をdiffに含める
 
 # テストの扱い
 
 テストを実装から完全に分離した工程として扱わない。
-
 ある振る舞いを追加するとき、そのmicrotaskと一緒に変更するのが自然な小さなテストであれば含めてもよい。
-
 ただし、テスト追加によってmicrotaskが大きくなる場合は先取りしない。
 
 数microtask進み、意味のある振る舞いが成立した時点で検証する方が自然なら、その段階まで待つ。
@@ -243,24 +265,147 @@ microtaskは、コード上の依存関係ではなく、原則として**対象
 
 最初に、今回追うシナリオを1行だけ示す。
 
-続けて、現在地点からのmicrotask候補を実装順に番号付きで提示する。
-
-各microtaskは原則1行にする。
-
 例:
 
 > シナリオ: ボタン押下 → ViewModel → Repository → API → 結果表示
 
-1. `onSubmit` から `inputText` を `viewModel.submit` に渡す
-2. `submit` に `inputText: string` 引数を追加する
-3. `submit` から `repository.search(inputText)` を呼ぶ
-4. `search` に `query: string` 引数を追加する
-5. `search` からHTTPクライアントへ `query` を渡す
-6. HTTPレスポンス本文を `parseResponse` に渡す
-7. `parseResponse` のプレースホルダを追加する
-8. `parseResponse` の戻り値型を `SearchResult` にする
-9. `SearchResult` のプレースホルダを追加する
-10. `parseResponse` の戻り値を `search` から返す
+その後、microtaskを番号順に提示する。
 
-対象コードの周辺が提示できる場合は提示する。
-長い解説、各候補の理由説明、完成後の設計説明は行わない。
+各microtaskは、
+
+- 番号
+- 変更内容
+- 必要最小限のdiff
+- 必要であればファイル名
+
+だけを表示する。
+
+ファイル名は変更内容より目立たせず、補助情報としてdiffの直前に記載する。
+
+例:
+
+### 1. `submit` に `inputText: string` 引数を追加する
+
+`src/search/SearchViewModel.ts`
+
+```diff
+- async submit() {
++ async submit(inputText: string) {
+    await this.repository.search();
+}
+```
+
+### 2. `repository.search()` に `inputText` を渡す
+
+`src/search/SearchViewModel.ts`
+
+```diff
+async submit(inputText: string) {
+-   await this.repository.search();
++   await this.repository.search(inputText);
+}
+```
+
+※ Repository側を変更するまで一時的に型エラーになる。
+
+### 3. `search` に `query: string` 引数を追加する
+
+`src/search/SearchRepository.ts`
+
+```diff
+- async search(): Promise<SearchResult> {
++ async search(query: string): Promise<SearchResult> {
+    return this.client.get("/search");
+}
+```
+
+### 4. HTTPクライアントへ `query` を渡す
+
+`src/search/SearchRepository.ts`
+
+```diff
+async search(query: string): Promise<SearchResult> {
+-   return this.client.get("/search");
++   return this.client.get("/search", query);
+}
+```
+
+### 5. HTTPレスポンスを変数で受け取る
+
+`src/search/SearchRepository.ts`
+
+```diff
+async search(query: string): Promise<SearchResult> {
+-   return this.client.get("/search", query);
++   const response = await this.client.get("/search", query);
++   return response;
+}
+```
+
+### 6. `response.body` を `parseResponse` に渡す
+
+`src/search/SearchRepository.ts`
+
+```diff
+async search(query: string): Promise<SearchResult> {
+    const response = await this.client.get("/search", query);
+-   return response;
++   return parseResponse(response.body);
+}
+```
+
+※ `parseResponse` を追加するまで一時的に未定義になる。
+
+### 7. `parseResponse` のプレースホルダを追加する
+
+`src/search/SearchRepository.ts`
+
+```diff
++ function parseResponse() {
++ }
++
+export class SearchRepository {
+```
+
+### 8. `parseResponse` に `body: string` 引数を追加する
+
+`src/search/SearchRepository.ts`
+
+```diff
+- function parseResponse() {
++ function parseResponse(body: string) {
+}
+```
+
+### 9. `parseResponse` の戻り値型を `SearchResult` にする
+
+`src/search/SearchRepository.ts`
+
+```diff
+- function parseResponse(body: string) {
++ function parseResponse(body: string): SearchResult {
+}
+```
+
+### 10. `SearchResult` 型のプレースホルダを追加する
+
+`src/search/SearchResult.ts`
+
+```diff
++ export interface SearchResult {
++ }
+```
+
+各diffは、そのmicrotaskによる変更だけを含める。
+
+変更判断に不要な周辺コードは表示しない。
+
+候補はデータ・制御フローに沿った連続した実装手順として提示するため、各diffは原則として、それ以前の候補が順番に適用された仮想状態を基準にする。
+
+ユーザーが一部のmicrotaskだけを選択した場合、`mini-impl` はこの仮想状態を前提にせず、実際の現在コードを読み直して、選択されたmicrotaskだけを実装する。
+
+以下は表示しない。
+
+- 各候補の詳細な理由
+- 完成後の設計説明
+- ファイル全体のdiff
