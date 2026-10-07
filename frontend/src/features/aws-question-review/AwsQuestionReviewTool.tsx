@@ -21,6 +21,23 @@ type AwsQuestionNoteEntryRouteProps = {
   readonly onSave: (question: AwsQuestion, note: string) => void;
 };
 
+type ActiveQuestionSession = {
+  readonly mode: QuestionSessionMode;
+  readonly questions: readonly AwsQuestion[];
+};
+
+function shuffleQuestionOrder(questions: readonly AwsQuestion[]): readonly AwsQuestion[] {
+  const shuffledQuestions = [...questions];
+  for (let index = shuffledQuestions.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledQuestions[index], shuffledQuestions[swapIndex]] = [
+      shuffledQuestions[swapIndex],
+      shuffledQuestions[index],
+    ];
+  }
+  return shuffledQuestions;
+}
+
 function AwsQuestionNoteEntryRoute({ questions, reviewsByQuestion, onSave }: AwsQuestionNoteEntryRouteProps) {
   const location = useLocation();
   const state = location.state;
@@ -47,6 +64,7 @@ function AwsQuestionNoteEntryRoute({ questions, reviewsByQuestion, onSave }: Aws
 
 export function AwsQuestionReviewTool() {
   const [reviewData, setReviewData] = useState(loadAwsQuestionReview);
+  const [activeSession, setActiveSession] = useState<ActiveQuestionSession>();
   const navigate = useNavigate();
   const canImportQuestions = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   const reviewQuestions = reviewData.questions.filter(
@@ -88,11 +106,17 @@ export function AwsQuestionReviewTool() {
     });
   }
 
-  function startSession(mode: QuestionSessionMode) {
+  function startSession(mode: QuestionSessionMode, shuffle: boolean) {
+    const questions = mode === 'review' ? reviewQuestions : reviewData.questions;
+    setActiveSession({
+      mode,
+      questions: shuffle ? shuffleQuestionOrder(questions) : questions,
+    });
     navigate(mode === 'review' ? '/aws-question-review/review' : '/aws-question-review');
   }
 
   function restartSession() {
+    setActiveSession(undefined);
     navigate('/aws-question-review/start');
   }
 
@@ -129,7 +153,7 @@ export function AwsQuestionReviewTool() {
           path="note"
           element={(
             <AwsQuestionNoteEntryRoute
-              questions={reviewData.questions}
+              questions={activeSession?.mode === 'all' ? activeSession.questions : reviewData.questions}
               reviewsByQuestion={reviewData.reviewsByQuestion}
               onSave={saveImportedQuestionNote}
             />
@@ -151,7 +175,7 @@ export function AwsQuestionReviewTool() {
           path="review"
           element={(
             <AwsQuestionReviewPage
-              questions={reviewQuestions}
+              questions={activeSession?.mode === 'review' ? activeSession.questions : reviewQuestions}
               reviewsByQuestion={reviewData.reviewsByQuestion}
               onReviewChange={handleReviewChange}
               onRestart={restartSession}

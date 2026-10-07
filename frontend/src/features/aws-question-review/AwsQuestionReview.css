@@ -138,6 +138,21 @@
   margin-top: 24px;
 }
 
+.aws-shuffle-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #43515b;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.aws-shuffle-option input {
+  width: 18px;
+  height: 18px;
+  accent-color: #337d67;
+}
+
 .aws-session-option {
   display: flex;
   align-items: center;
